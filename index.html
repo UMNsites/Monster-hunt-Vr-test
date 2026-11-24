@@ -14,8 +14,8 @@
 </head>
 <body>
 <div id="panel">
-  <strong>MONSTER HUNT VR — TEST SCENE 0.1</strong>
-  <small>Look around in VR. On a phone/computer preview, drag to look and use WASD to move. In Quest Browser, press Enter VR. Point a controller laser at the glowing test cube and squeeze the trigger to pick it up; squeeze again to release.</small>
+  <strong>MONSTER HUNT VR — TEST SCENE 0.2</strong>
+  <small>Gorilla-style arm movement: push your hands against the floor or arena walls to move. Grab the yellow block with a controller trigger, move it, then release to throw it. Quest Browser: press Enter VR.</small>
 </div>
 
 <a-scene
@@ -88,8 +88,7 @@
 
   <!-- Grabbable test cube for checking controller interaction -->
   <a-box id="testCube" class="grabbable" position="1.2 1.2 -2.2" depth="0.42" height="0.42" width="0.42"
-         material="color:#ffcb36; emissive:#ff8c00; emissiveIntensity:0.8"
-         animation="property: rotation; to: 0 360 0; loop: true; dur: 5000"></a-box>
+         material="color:#ffcb36; emissive:#ff8c00; emissiveIntensity:0.8"></a-box>
   <a-text value="GRAB TEST" position="0.55 1.72 -2.2" color="#ffe7a3" width="3"></a-text>
   <a-text value="MONSTER HUNT VR  /  TEST ARENA" position="-4 0.04 -11.7" rotation="-90 0 0"
           color="#ffffff" width="8"></a-text>
@@ -100,38 +99,129 @@
       <a-cursor raycaster="objects: .grabbable" fuse="false" color="#ffdf65"></a-cursor>
     </a-camera>
     <a-entity id="leftHand" laser-controls="hand: left" raycaster="objects: .grabbable; far: 8"
-              grabber></a-entity>
+              grabber="hand: left">
+      <a-sphere radius="0.105" color="#f3a1b9" material="roughness:0.85"></a-sphere>
+      <a-cylinder class="armMesh" radius="0.075" height="1" color="#e91e78" material="roughness:0.9"></a-cylinder>
+    </a-entity>
     <a-entity id="rightHand" laser-controls="hand: right" raycaster="objects: .grabbable; far: 8"
-              grabber></a-entity>
+              grabber="hand: right">
+      <a-sphere radius="0.105" color="#f3a1b9" material="roughness:0.85"></a-sphere>
+      <a-cylinder class="armMesh" radius="0.075" height="1" color="#e91e78" material="roughness:0.9"></a-cylinder>
+    </a-entity>
   </a-entity>
 </a-scene>
 
 <script>
+  // Simple, lightweight physics for the test block: gravity, floor/wall bounce and throwing.
+  AFRAME.registerComponent('block-physics', {
+    schema: { gravity: {default: 9.8}, bounce: {default: 0.48} },
+    init: function () {
+      this.velocity = new THREE.Vector3();
+      this.heldBy = null;
+      this.lastPosition = new THREE.Vector3();
+      this.el.object3D.position.set(1.2, 1.2, -2.2);
+    },
+    tick: function (time, dt) {
+      if (this.heldBy) return;
+      const step = Math.min((dt || 0) / 1000, 0.04);
+      const o = this.el.object3D;
+      this.velocity.y -= this.data.gravity * step;
+      o.position.addScaledVector(this.velocity, step);
+      const half = 0.21;
+      if (o.position.y < half) { o.position.y = half; this.velocity.y = Math.abs(this.velocity.y) * this.data.bounce; this.velocity.x *= 0.88; this.velocity.z *= 0.88; }
+      if (o.position.x < -17.5 + half || o.position.x > 17.5 - half) { o.position.x = THREE.MathUtils.clamp(o.position.x, -17.5 + half, 17.5 - half); this.velocity.x *= -this.data.bounce; }
+      if (o.position.z < -11.5 + half || o.position.z > 11.5 - half) { o.position.z = THREE.MathUtils.clamp(o.position.z, -11.5 + half, 11.5 - half); this.velocity.z *= -this.data.bounce; }
+      this.velocity.multiplyScalar(Math.pow(0.995, step * 60));
+      o.rotation.x += this.velocity.z * step * 0.5;
+      o.rotation.z -= this.velocity.x * step * 0.5;
+    }
+  });
+
+  // Controller hands become long arms. Pressing a hand against a surface pushes the player
+  // in the opposite direction, giving a basic Gorilla-Tag-inspired locomotion test.
+  AFRAME.registerComponent('gorilla-arms', {
+    init: function () {
+      this.hands = [document.querySelector('#leftHand'), document.querySelector('#rightHand')];
+      this.previous = [new THREE.Vector3(), new THREE.Vector3()];
+      this.ready = [false, false];
+      this.shoulders = [new THREE.Vector3(-0.24, 1.28, 0), new THREE.Vector3(0.24, 1.28, 0)];
+      this.tmp = new THREE.Vector3();
+      this.down = new THREE.Vector3(0, -1, 0);
+      this.ray = new THREE.Raycaster();
+    },
+    tick: function () {
+      const rig = this.el.object3D;
+      const scene = this.el.sceneEl.object3D;
+      this.hands.forEach((hand, i) => {
+        if (!hand || !hand.object3D.visible) return;
+        const handWorld = new THREE.Vector3();
+        hand.object3D.getWorldPosition(handWorld);
+        const arm = hand.querySelector('.armMesh');
+        const shoulder = this.shoulders[i].clone();
+        this.el.object3D.localToWorld(shoulder);
+        const mid = shoulder.clone().add(handWorld).multiplyScalar(0.5);
+        const delta = handWorld.clone().sub(shoulder);
+        arm.object3D.position.copy(hand.object3D.worldToLocal(mid));
+        arm.object3D.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), delta.clone().normalize());
+        arm.object3D.scale.y = Math.max(0.25, delta.length());
+        if (this.ready[i]) {
+          const movement = handWorld.clone().sub(this.previous[i]);
+          const floorContact = handWorld.y < 0.22;
+          const wallContact = Math.abs(handWorld.x) > 17.35 || Math.abs(handWorld.z) > 11.35;
+          // Only push when a hand is actually against an arena surface.
+          if (floorContact || wallContact) {
+            rig.position.x -= movement.x;
+            rig.position.z -= movement.z;
+            if (floorContact && movement.y < 0) rig.position.y -= movement.y;
+          }
+        }
+        this.previous[i].copy(handWorld);
+        this.ready[i] = true;
+      });
+    }
+  });
+
   AFRAME.registerComponent('grabber', {
+    schema: {hand: {default: 'right'}},
     init: function () {
       this.held = null;
+      this.previousHand = new THREE.Vector3();
+      this.handVelocity = new THREE.Vector3();
+      this.lastTime = 0;
       this.el.addEventListener('triggerdown', () => {
-        if (this.held) {
-          const obj = this.held;
-          this.el.sceneEl.object3D.attach(obj.object3D);
-          this.held = null;
-          return;
-        }
+        if (this.held) { this.release(); return; }
         const ray = this.el.components.raycaster;
         if (!ray || !ray.intersections.length) return;
         const hit = ray.intersections.find(x => x.object.el && x.object.el.classList.contains('grabbable'));
         if (!hit) return;
         this.held = hit.object.el;
+        const physics = this.held.components['block-physics'];
+        if (physics) physics.heldBy = this.el;
         this.el.object3D.attach(this.held.object3D);
-        this.held.object3D.position.set(0, 0, -0.65);
+        this.held.object3D.position.set(0, 0, -0.45);
+        this.held.object3D.rotation.set(0, 0, 0);
       });
-      this.el.addEventListener('gripdown', () => {
-        if (!this.held) return;
-        this.el.sceneEl.object3D.attach(this.held.object3D);
-        this.held = null;
-      });
+      this.el.addEventListener('gripdown', () => { if (this.held) this.release(); });
+    },
+    tick: function (time) {
+      const pos = new THREE.Vector3(); this.el.object3D.getWorldPosition(pos);
+      if (this.lastTime) {
+        const dt = Math.max(0.001, Math.min((time - this.lastTime) / 1000, 0.05));
+        this.handVelocity.copy(pos).sub(this.previousHand).multiplyScalar(1 / dt);
+      }
+      this.previousHand.copy(pos); this.lastTime = time;
+    },
+    release: function () {
+      const obj = this.held;
+      if (!obj) return;
+      this.el.sceneEl.object3D.attach(obj.object3D);
+      const physics = obj.components['block-physics'];
+      if (physics) { physics.heldBy = null; physics.velocity.copy(this.handVelocity).multiplyScalar(1.15); }
+      this.held = null;
     }
   });
+  document.querySelector('#testCube').setAttribute('block-physics', '');
+  document.querySelector('#rig').setAttribute('gorilla-arms', '');
 </script>
 </body>
 </html>
