@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monster Hunt VR — Test Scene 0.1</title>
+  <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+  <style>
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#08090d;font-family:Arial,sans-serif}
+    #panel{position:fixed;z-index:5;top:12px;left:12px;right:12px;max-width:440px;padding:12px 14px;color:#fff;background:#111827eF;border:1px solid #713044;border-radius:12px}
+    #panel strong{color:#ff6b91} #panel small{display:block;margin-top:5px;line-height:1.35;color:#d1d5db}
+    a-scene{height:100%;width:100%}
+  </style>
+</head>
+<body>
+<div id="panel">
+  <strong>MONSTER HUNT VR — TEST SCENE 0.1</strong>
+  <small>Look around in VR. On a phone/computer preview, drag to look and use WASD to move. In Quest Browser, press Enter VR. Point a controller laser at the glowing test cube and squeeze the trigger to pick it up; squeeze again to release.</small>
+</div>
+
+<a-scene
+  renderer="colorManagement: true; physicallyCorrectLights: true"
+  background="color: #08090d"
+  vr-mode-ui="enabled: true"
+  device-orientation-permission-ui="enabled: true"
+  shadow="type: pcfsoft"
+>
+  <a-assets>
+    <a-mixin id="darkwall" material="color: #20232c; roughness: 0.92"></a-mixin>
+  </a-assets>
+
+  <!-- Night-time test arena -->
+  <a-plane rotation="-90 0 0" width="36" height="36" color="#34323a"
+           material="roughness:0.95" position="0 0 0"></a-plane>
+  <a-plane rotation="-90 0 0" width="36" height="36" color="#5d1828"
+           material="transparent:true; opacity:0.13" position="0 0.012 0"></a-plane>
+
+  <a-box position="0 3 -12" width="36" height="6" depth="0.5" mixin="darkwall"></a-box>
+  <a-box position="0 3 12" width="36" height="6" depth="0.5" mixin="darkwall"></a-box>
+  <a-box position="-18 3 0" width="0.5" height="6" depth="24" mixin="darkwall"></a-box>
+  <a-box position="18 3 0" width="0.5" height="6" depth="24" mixin="darkwall"></a-box>
+
+  <!-- Pillars and overhead lights -->
+  <a-box position="-7 2 -5" width="1.2" height="4" depth="1.2" color="#292c35"></a-box>
+  <a-box position="7 2 -5" width="1.2" height="4" depth="1.2" color="#292c35"></a-box>
+  <a-box position="-7 2 5" width="1.2" height="4" depth="1.2" color="#292c35"></a-box>
+  <a-box position="7 2 5" width="1.2" height="4" depth="1.2" color="#292c35"></a-box>
+  <a-plane position="0 5.8 -7" rotation="0 0 0" width="5" height="0.15"
+           material="color:#fff0d2; emissive:#fff0d2; emissiveIntensity:2"></a-plane>
+  <a-light type="point" position="0 5 -7" intensity="1.7" color="#ffd8c4" distance="22"></a-light>
+  <a-light type="point" position="0 4 2" intensity="0.8" color="#ff244f" distance="15"></a-light>
+  <a-light type="ambient" intensity="0.45" color="#9ca3af"></a-light>
+
+  <!-- Original placeholder monster: pink fur is represented by a bright textured-looking silhouette -->
+  <a-entity id="monster" position="0 0 -5">
+    <!-- legs -->
+    <a-cylinder position="-0.55 0.68 0" radius="0.34" height="1.35" color="#e91e78"></a-cylinder>
+    <a-cylinder position="0.55 0.68 0" radius="0.34" height="1.35" color="#e91e78"></a-cylinder>
+    <!-- body and belly -->
+    <a-sphere position="0 1.95 0" radius="1.05" scale="1 1.25 0.72" color="#f02083"></a-sphere>
+    <a-sphere position="0 1.9 0.58" radius="0.66" scale="1 1.12 0.18" color="#77747a"></a-sphere>
+    <!-- head and muzzle -->
+    <a-sphere position="0 3.45 0" radius="0.93" scale="1.05 1.03 0.78" color="#ed1680"></a-sphere>
+    <a-sphere position="0 3.25 0.62" radius="0.52" scale="1.2 0.78 0.42" color="#77747a"></a-sphere>
+    <a-box position="0 3.02 0.94" width="0.7" height="0.12" depth="0.12" color="#260d16"></a-box>
+    <!-- fixed bloodshot eyes -->
+    <a-sphere position="-0.37 3.62 0.68" radius="0.24" color="#fff1ec"></a-sphere>
+    <a-sphere position="0.37 3.62 0.68" radius="0.24" color="#fff1ec"></a-sphere>
+    <a-torus position="-0.37 3.62 0.88" radius="0.20" radius-tubular="0.025" color="#b10f32"></a-torus>
+    <a-torus position="0.37 3.62 0.88" radius="0.20" radius-tubular="0.025" color="#b10f32"></a-torus>
+    <!-- cap -->
+    <a-sphere position="0 4.27 0" radius="0.5" scale="1 0.32 0.8" color="#e52524"></a-sphere>
+    <a-box position="0 4.16 0.38" width="1.05" height="0.08" depth="0.55" color="#f5c21b"></a-box>
+    <!-- arms: bright red emissive sleeves -->
+    <a-entity position="-1.15 2.45 0">
+      <a-cylinder rotation="0 0 58" position="-0.42 -0.05 0" radius="0.28" height="1.45"
+        material="color:#8e102c; emissive:#ff092e; emissiveIntensity:1.5"></a-cylinder>
+      <a-sphere position="-0.93 -0.43 0.08" radius="0.34" color="#7d2635"></a-sphere>
+      <a-light type="point" position="-0.5 0 0" color="#ff103b" intensity="0.7" distance="3"></a-light>
+    </a-entity>
+    <a-entity position="1.15 2.45 0">
+      <a-cylinder rotation="0 0 -58" position="0.42 -0.05 0" radius="0.28" height="1.45"
+        material="color:#8e102c; emissive:#ff092e; emissiveIntensity:1.5"></a-cylinder>
+      <a-sphere position="0.93 -0.43 0.08" radius="0.34" color="#7d2635"></a-sphere>
+      <a-light type="point" position="0.5 0 0" color="#ff103b" intensity="0.7" distance="3"></a-light>
+    </a-entity>
+  </a-entity>
+
+  <!-- Grabbable test cube for checking controller interaction -->
+  <a-box id="testCube" class="grabbable" position="1.2 1.2 -2.2" depth="0.42" height="0.42" width="0.42"
+         material="color:#ffcb36; emissive:#ff8c00; emissiveIntensity:0.8"
+         animation="property: rotation; to: 0 360 0; loop: true; dur: 5000"></a-box>
+  <a-text value="GRAB TEST" position="0.55 1.72 -2.2" color="#ffe7a3" width="3"></a-text>
+  <a-text value="MONSTER HUNT VR  /  TEST ARENA" position="-4 0.04 -11.7" rotation="-90 0 0"
+          color="#ffffff" width="8"></a-text>
+
+  <!-- Player rig. Physical room movement works in headset; WASD is for flat preview. -->
+  <a-entity id="rig" position="0 0 3" wasd-controls>
+    <a-camera position="0 1.6 0" look-controls>
+      <a-cursor raycaster="objects: .grabbable" fuse="false" color="#ffdf65"></a-cursor>
+    </a-camera>
+    <a-entity id="leftHand" laser-controls="hand: left" raycaster="objects: .grabbable; far: 8"
+              grabber></a-entity>
+    <a-entity id="rightHand" laser-controls="hand: right" raycaster="objects: .grabbable; far: 8"
+              grabber></a-entity>
+  </a-entity>
+</a-scene>
+
+<script>
+  AFRAME.registerComponent('grabber', {
+    init: function () {
+      this.held = null;
+      this.el.addEventListener('triggerdown', () => {
+        if (this.held) {
+          const obj = this.held;
+          this.el.sceneEl.object3D.attach(obj.object3D);
+          this.held = null;
+          return;
+        }
+        const ray = this.el.components.raycaster;
+        if (!ray || !ray.intersections.length) return;
+        const hit = ray.intersections.find(x => x.object.el && x.object.el.classList.contains('grabbable'));
+        if (!hit) return;
+        this.held = hit.object.el;
+        this.el.object3D.attach(this.held.object3D);
+        this.held.object3D.position.set(0, 0, -0.65);
+      });
+      this.el.addEventListener('gripdown', () => {
+        if (!this.held) return;
+        this.el.sceneEl.object3D.attach(this.held.object3D);
+        this.held = null;
+      });
+    }
+  });
+</script>
+</body>
+</html>
